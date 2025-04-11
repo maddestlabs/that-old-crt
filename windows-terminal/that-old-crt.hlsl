@@ -1,3 +1,6 @@
+// Title: That Old CRT
+// Author: MaddestLabs
+
 SamplerState Sampler;
 Texture2D contentTexture : register(t0);
 Texture2D bgTexture : register(t1);
@@ -71,7 +74,7 @@ float3 tex(float2 uv, float bSize, float3 bColor, bool isFrame, float fSize) {
     float iTime = Time;
     float2 iResolution = Resolution;
 
-    float bgReflect = 1.0;
+    float bgReflect = 0.75;
     float grilleLvl = 0.95; // Range: 0.0, 3.0
     float grilleDensity = 800.0; // Range: 0.0, 1000.0
     float scanlineLvl = 0.8; // Range: 0.05, 3.0
@@ -85,7 +88,7 @@ float3 tex(float2 uv, float bSize, float3 bColor, bool isFrame, float fSize) {
     float screenTint = 0.0;
     float screenHue = 0.27;
     float screenSat = 1.0;
-    float bloomEnabled = 0.0; // Largley increases compile time when set above 0.0
+    float bloomEnabled = 0.0; // Largley increases compile/start time when set above 0.0
     float bloomLow = 0.3f;
     float bloomHigh = 0.8f;
     float bloomRate = 3.0f;
@@ -182,13 +185,15 @@ float3 tex(float2 uv, float bSize, float3 bColor, bool isFrame, float fSize) {
         color *= f;
     }
 
-    // Reflection
-    float4 reflection = bgTexture.Sample(Sampler, uv);
-    // decrease contrast and brightness of reflection
-    float3 dimmed = reflection.rgb * 0.1;
-    float contrast = 0.75;
-    float3 adjusted = 0.5f + (dimmed - 0.5f) * contrast;
-    color += adjusted * bgReflect;
+    // FX Reflection
+    if (bgReflect > 0.0) {
+        float4 reflection = bgTexture.Sample(Sampler, uv);
+        // decrease contrast and brightness of reflection
+        float3 dimmed = reflection.rgb * 0.1;
+        float contrast = 0.5;
+        float3 adjusted = 0.5f + (dimmed - 0.5f) * contrast;
+        color += adjusted * bgReflect;
+    }
     
     // FX Bloom
     if (bloomEnabled > 0.0) {
