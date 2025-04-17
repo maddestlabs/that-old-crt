@@ -14,8 +14,8 @@ cbuffer PixelShaderSettings
 };
 
 // Gaussian blur constants
-#define SCALED_GAUSSIAN_SIGMA (2.0f * Scale)
-static const float M_PI = 3.14159265f;
+#define SCALED_GAUSSIAN_SIGMA (2.0 * Scale)
+static const float M_PI = 3.14159265;
 
 float rnd(float2 c) {
     return frac(sin(dot(c.xy, float2(12.9898,78.233))) * 43758.5453);
@@ -47,20 +47,20 @@ float3 Blur(float2 tex_coord, float sigma, float sampleCount) {
     width = dimensions.x;
     height = dimensions.y;
 
-    float texelWidth = 1.0f / width;
-    float texelHeight = 1.0f / height;
+    float texelWidth = 1.0 / width;
+    float texelHeight = 1.0 / height;
 
     float3 color = float3(0, 0, 0);
-    float totalWeight = 0.0f;
+    float totalWeight = 0.0;
     
     for (float x = 0; x < sampleCount; x++) {
         float2 samplePos = float2(0, 0);
-        samplePos.x = tex_coord.x + (x - sampleCount / 2.0f) * texelWidth;
+        samplePos.x = tex_coord.x + (x - sampleCount / 2.0) * texelWidth;
 
         for (float y = 0; y < sampleCount; y++) {
-            samplePos.y = tex_coord.y + (y - sampleCount / 2.0f) * texelHeight;
+            samplePos.y = tex_coord.y + (y - sampleCount / 2.0) * texelHeight;
             
-            float weight = Gaussian2D(x - sampleCount / 2.0f, y - sampleCount / 2.0f, sigma);
+            float weight = Gaussian2D(x - sampleCount / 2.0, y - sampleCount / 2.0, sigma);
             totalWeight += weight;
             
             color += rgbShift(samplePos, 0.0005) * weight;
@@ -89,21 +89,37 @@ float3 tex(float2 uv, float bSize, float3 bColor, bool isFrame, float fSize) {
     float screenHue = 0.27;
     float screenSat = 1.0;
     float bloomEnabled = 0.0; // Largley increases compile/start time when set above 0.0
-    float bloomLow = 0.3f;
-    float bloomHigh = 0.8f;
-    float bloomRate = 3.0f;
+    float bloomLow = 0.3;
+    float bloomHigh = 0.8;
+    float bloomRate = 3.0;
     float vignetteStart = 0.25; //Range: 0.0, 2.0
     float vignetteLvl = 20.0; //Range: 1.0, 20.0
     float hSync = 0.0009; // Range: 0.0, 3.0
 
     // Bloom calculation
-    float t = (sin(iTime * bloomRate) + 1.0f) * 0.5f;
+    float t = (sin(iTime * bloomRate) + 1.0) * 0.5;
     float bloomIntensity = lerp(bloomLow, bloomHigh, t);
     
-    // Configure parameters for horizontal sync wave
+    // Horizontal sync wave effect
     float time = iTime * 5.0;
     float size = lerp(0.0, hSync, 0.1);
-    float hWave = sin(uv.y * 10.0 + time) * size;
+    float cyclePeriod = 2.0; // Base cycle of 2 seconds
+    float randomOffset = frac(sin(floor(iTime / cyclePeriod) * 12345.67) * 43758.5453); // Pseudo-random per cycle
+    float actualCyclePeriod = cyclePeriod + randomOffset; // Varies between 2-3 seconds
+    float cyclePosition = frac(iTime / actualCyclePeriod);
+
+    // Only show wave effect for the first 15% of each cycle
+    float waveDuration = 0.15;
+    float waveStrength = 0.0;
+
+    if (cyclePosition < waveDuration) {
+        float normalizedTime = cyclePosition / waveDuration;
+        waveStrength = sin(normalizedTime * 3.14159) * size;
+    }
+
+    // Apply wave effect only during the active period
+    float hWave = sin(uv.y * 10.0 + time) * waveStrength;
+    
     float3 color;
     
     // Use borderColor if within border width

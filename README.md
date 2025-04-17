@@ -14,6 +14,7 @@ Yes.
 
 ## Issues
 - The reflection on the frame is inaccurate. The corners noticably reflect the screen contents inaccurately. Also, if the border value is set (via borderSize), the reflection will deviate by increments based on this value as it moves toward center. This is a feature, since accurate reflections would ensure this project never sees the light of day.
+- Mouse coordinates are slightly skewed in Windows Terminal based on frame/border size and curvature settings in the shader.
 
 Please feel free to suggest fixes via pull requests.
 
